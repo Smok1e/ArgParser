@@ -22,7 +22,7 @@ template<typename T>
 concept ArgParserValueIndex = AnyOf<T, std::string_view, const char*> || std::integral<T>;
 
 template<typename T>
-concept ArgParserStringValue = AnyOf<T, std::string_view, const char*, std::filesystem::path>;
+concept ArgParserStringValue = AnyOf<T, std::string, std::string_view, const char*, std::filesystem::path>;
 
 template<typename T>
 concept ArgParserIntegerValue = std::integral<T> && !std::same_as<T, bool>;
@@ -115,7 +115,7 @@ public:
 
 	ArgParser(const std::initializer_list<OptionDef>& options);
 
-	void parse(int argc, char* argv[]);
+	void parse(int argc, char* argv[], bool accept_remaining_arguments = true);
 
 	template<ArgParserValueIndex IndexT>
 	ValueProxy<IndexT> get(IndexT index) const;
@@ -128,6 +128,8 @@ public:
 	size_t getArgumentCount() const;
 	size_t getOptionCount() const;
 
+	const std::vector<std::string_view>& getRemainingArguments() const; 
+
 	std::ostream& printAvailableOptions(std::ostream& stream = std::cout) const;
 	friend std::ostream& operator<<(std::ostream& stream, const ArgParser& parser);
 
@@ -137,6 +139,7 @@ private:
 
 	std::map<std::string_view, std::string_view> m_options {};
 	std::vector<std::string_view> m_arguments {};
+	std::vector<std::string_view> m_remaining_arguments {};
 
 };
 
@@ -179,9 +182,14 @@ T ArgParser::ValueProxy<IndexT>::as() const
 	if constexpr (std::is_integral_v<IndexT>)
 	{
 		if (!exists())
-			throw ArgParserException(std::format("missing required argument at position {}", m_index + 1));
+			throw ArgParserException(std::format("missing required argument at position {}", m_index));
 
-		return m_parser->m_arguments[m_index];
+		auto value = m_parser->m_arguments.at(m_index);
+		if constexpr (!std::is_same_v<T, std::string_view>)
+			return value.data();
+
+		else
+			return value;
 	}
 
 	else
@@ -190,7 +198,7 @@ T ArgParser::ValueProxy<IndexT>::as() const
 			throw ArgParserException(std::format("missing required option --{}", m_index));
 
 		auto value = m_parser->m_options.at(m_index);
-		if constexpr (std::is_same_v<T, std::string_view>)
+		if constexpr (!std::is_same_v<T, std::string_view>)
 			return value.data();
 
 		else

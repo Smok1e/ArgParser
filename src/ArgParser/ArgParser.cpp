@@ -60,8 +60,12 @@ ArgParser::ArgParser(const std::initializer_list<OptionDef>& options):
 	}
 }
 
-void ArgParser::parse(int argc, char* argv[])
+void ArgParser::parse(int argc, char* argv[], bool accept_remaining_arguments /*= true*/)
 {
+	m_options.clear();
+	m_arguments.clear();
+	m_remaining_arguments.clear();
+
 	m_executable_path = *argv;
 
 	for (size_t i = 1; i < argc; i++)
@@ -72,6 +76,18 @@ void ArgParser::parse(int argc, char* argv[])
 			// Full option name variant, e. g. --option
 			if (argv[i][1] == '-')
 			{
+				// Remaining arguments (passed after --)
+				if (argv[i][2] == '\0' && accept_remaining_arguments)
+				{
+					m_remaining_arguments.insert(
+						m_remaining_arguments.begin(),
+						argv + i + 1,
+						argv + argc
+					);
+
+					break;
+				}
+
 				const char* begin = argv[i] + 2;
 				const char* end = strchr(begin, '=');
 
@@ -160,6 +176,11 @@ size_t ArgParser::getArgumentCount() const
 size_t ArgParser::getOptionCount() const
 {
 	return m_options.size();
+}
+
+const std::vector<std::string_view>& ArgParser::getRemainingArguments() const
+{
+	return m_remaining_arguments;
 }
 
 std::ostream& ArgParser::printAvailableOptions(std::ostream& stream /*= std::cout*/) const
