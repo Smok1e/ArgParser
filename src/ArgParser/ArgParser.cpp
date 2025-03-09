@@ -2,7 +2,7 @@
 #include <filesystem>
 #include <cstring>
 
-#include "ArgParser.hpp"
+#include <ArgParser/ArgParser.hpp>
 
 //======================================
 
@@ -150,6 +150,16 @@ void ArgParser::parse(int argc, char* argv[])
 const std::filesystem::path& ArgParser::getExecutablePath() const
 {
 	return m_executable_path;
+}
+
+size_t ArgParser::getArgumentCount() const
+{
+	return m_arguments.size();
+}
+
+size_t ArgParser::getOptionCount() const
+{
+	return m_options.size();
 }
 
 std::ostream& ArgParser::printAvailableOptions(std::ostream& stream /*= std::cout*/) const

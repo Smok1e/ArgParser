@@ -21,6 +21,12 @@ concept AnyOf = (std::same_as<T, U> || ...);
 template<typename T>
 concept ArgParserValueIndex = AnyOf<T, std::string_view, const char*> || std::integral<T>;
 
+template<typename T>
+concept ArgParserStringValue = AnyOf<T, std::string_view, const char*, std::filesystem::path>;
+
+template<typename T>
+concept ArgParserIntegerValue = std::integral<T> && !std::same_as<T, bool>;
+
 //======================================
 
 class ArgParserException: public std::runtime_error
@@ -70,15 +76,15 @@ public:
 		bool exists() const;
 
 		// Get raw string value
-		template<AnyOf<std::string_view, const char*> T>
+		template<ArgParserStringValue T>
+		T as() const;
+
+		// Interpret as integer
+		template<ArgParserIntegerValue T>
 		T as() const;
 
 		// Interpret as flag (just check if such key exists)
 		template<std::same_as<bool> T>
-		T as() const;
-
-		// Interpret as integer
-		template<std::integral T> requires (!std::same_as<bool, T>)
 		T as() const;
 
 		// Any variant above with default variant
@@ -118,6 +124,9 @@ public:
 	ValueProxy<IndexT> operator[](IndexT index) const;
 
 	const std::filesystem::path& getExecutablePath() const;
+
+	size_t getArgumentCount() const;
+	size_t getOptionCount() const;
 
 	std::ostream& printAvailableOptions(std::ostream& stream = std::cout) const;
 	friend std::ostream& operator<<(std::ostream& stream, const ArgParser& parser);
@@ -164,7 +173,7 @@ bool ArgParser::ValueProxy<IndexT>::exists() const
 }
 
 template<ArgParserValueIndex IndexT>
-template<AnyOf<std::string_view, const char*> T>
+template<ArgParserStringValue T>
 T ArgParser::ValueProxy<IndexT>::as() const
 {
 	if constexpr (std::is_integral_v<IndexT>)
@@ -190,14 +199,7 @@ T ArgParser::ValueProxy<IndexT>::as() const
 }
 
 template<ArgParserValueIndex IndexT>
-template<std::same_as<bool> T>
-T ArgParser::ValueProxy<IndexT>::as() const
-{
-	return exists();
-}
-
-template<ArgParserValueIndex IndexT>
-template<std::integral T> requires (!std::same_as<bool, T>)
+template<ArgParserIntegerValue T>
 T ArgParser::ValueProxy<IndexT>::as() const
 {
 	auto option = as<std::string_view>();
@@ -213,6 +215,13 @@ T ArgParser::ValueProxy<IndexT>::as() const
 		throw ArgParserException(std::format("{} is not a valid numeric value", option));
 
 	return value;
+}
+
+template<ArgParserValueIndex IndexT>
+template<std::same_as<bool> T>
+T ArgParser::ValueProxy<IndexT>::as() const
+{
+	return exists();
 }
 
 template<ArgParserValueIndex IndexT>
