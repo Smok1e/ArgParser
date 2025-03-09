@@ -12,6 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_library(
     ArgParser
+	src/ArgParser/ArgParser.cpp
 )
 
 target_include_directories(
