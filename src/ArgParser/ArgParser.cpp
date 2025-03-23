@@ -33,7 +33,9 @@ ArgParser::OptionDef::OptionDef(
 
 //======================================
 
-ArgParser::ArgParser(const std::initializer_list<OptionDef>& options):
+ArgParser::ArgParser(
+	const std::initializer_list<OptionDef>& options
+):
 	m_available_options(options)
 {
 	// Prevent short option duplicates
@@ -59,6 +61,19 @@ ArgParser::ArgParser(const std::initializer_list<OptionDef>& options):
 			);
 	}
 }
+
+ArgParser::ArgParser(
+	const std::initializer_list<OptionDef>& options, 
+	int argc, 
+	char* argv[],
+	bool accept_remaining_arguments /*= true*/
+):
+	ArgParser(options)
+{
+	parse(argc, argv, accept_remaining_arguments);
+}
+
+//======================================
 
 void ArgParser::parse(int argc, char* argv[], bool accept_remaining_arguments /*= true*/)
 {

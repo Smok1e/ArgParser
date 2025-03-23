@@ -113,7 +113,16 @@ public:
 	template<ArgParserValueIndex IndexT>
 	friend class ValueProxy;
 
-	ArgParser(const std::initializer_list<OptionDef>& options);
+	ArgParser(
+		const std::initializer_list<OptionDef>& options
+	);
+
+	ArgParser(
+		const std::initializer_list<OptionDef>& options, 
+		int argc, 
+		char* argv[], 
+		bool accept_remaining_arguments = true
+	);
 
 	void parse(int argc, char* argv[], bool accept_remaining_arguments = true);
 
